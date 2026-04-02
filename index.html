@@ -1,141 +1,138 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>記帳工具 (Google Sheets)</title>
-  <link rel="stylesheet" href="./styles.css" />
-
-  <!-- 重要：用 onload 確保 GIS 載入完成後才初始化 -->
-  <script src="https://accounts.google.com/gsi/client" async defer onload="onGisLoaded()"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的記帳本 ʕ•ᴥ•ʔ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-  <header class="container">
-    <div class="row space-between center">
-      <h1>記帳工具</h1>
-      <div class="row gap">
-        <button id="btnSignIn" class="btn primary" disabled>登入 Google</button>
-        <button id="btnSignOut" class="btn" disabled>登出</button>
-      </div>
-    </div>
-    <p class="muted">資料來源：Google 試算表「記帳紀錄」「欄位表」</p>
-  </header>
-
-  <main class="container grid">
-    <section class="card">
-      <h2>新增記帳</h2>
-
-      <form id="recordForm" class="form">
-        <div class="grid2">
-          <label>
-            日期
-            <input id="fDate" type="date" required />
-          </label>
-
-          <label>
-            類型
-            <select id="fType" required>
-              <option value="支出">支出</option>
-              <option value="收入">收入</option>
-            </select>
-          </label>
+    <header>
+        <div class="header-container">
+            <h1>我的記帳本 🧸</h1>
+            <div id="auth-container">
+                <button id="auth-button" class="btn primary-btn">登入</button>
+            </div>
         </div>
+    </header>
 
-        <div class="grid2">
-          <label>
-            分類
-            <select id="fCategory" required></select>
-          </label>
+    <main id="main-content" style="display: none;">
+        <!-- 記帳表單區塊 -->
+        <section class="card input-section">
+            <h2>新增紀錄 📝</h2>
+            <form id="record-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="date">日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>類型</label>
+                        <div class="radio-group" style="display: flex; gap: 15px; margin-top: 10px; align-items: center;">
+                            <label style="display: flex; gap: 5px; align-items: center; font-weight: normal; margin: 0; color: var(--text-color);">
+                                <input type="radio" name="type" value="支出" checked style="width: auto; margin: 0;"> 支出
+                            </label>
+                            <label style="display: flex; gap: 5px; align-items: center; font-weight: normal; margin: 0; color: var(--text-color);">
+                                <input type="radio" name="type" value="收入" style="width: auto; margin: 0;"> 收入
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">類別</label>
+                        <select id="category" required>
+                            <!-- 動態選項 -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">金額</label>
+                        <input type="number" id="amount" min="1" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="description">項目描述</label>
+                        <input type="text" id="description" placeholder="例如：午餐拉麵" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note">備註</label>
+                        <input type="text" id="note" placeholder="選填">
+                    </div>
+                </div>
+                <button type="submit" class="btn submit-btn" id="submit-btn">送出紀錄</button>
+            </form>
+        </section>
 
-          <label>
-            付款方式
-            <select id="fPayment" required></select>
-          </label>
-        </div>
+        <!-- 統計與管理區塊 -->
+        <section class="card manage-section">
+            <div class="manage-header">
+                <h2>紀錄管理 📊</h2>
+                <div class="filters">
+                    <div style="display: flex; gap: 5px;">
+                        <input type="month" id="month-filter">
+                        <button type="button" id="clear-month" class="btn" style="background: white; border: 2px solid var(--border-color); color: var(--text-color); padding: 5px 12px; font-size: 0.9rem;">列出全部</button>
+                    </div>
+                    <select id="category-filter">
+                        <option value="all">所有類別</option>
+                        <!-- 動態分類 -->
+                    </select>
+                </div>
+            </div>
 
-        <div class="grid2">
-          <label>
-            金額
-            <input id="fAmount" type="number" min="0" step="1" inputmode="numeric" required />
-          </label>
+            <!-- 統計區塊 -->
+            <div class="stats-container">
+                <div class="stat-box income">
+                    <h3>總收入</h3>
+                    <p id="total-income">$0</p>
+                </div>
+                <div class="stat-box expense">
+                    <h3>總支出</h3>
+                    <p id="total-expense">$0</p>
+                </div>
+                <div class="stat-box net">
+                    <h3>淨收入</h3>
+                    <p id="net-income">$0</p>
+                </div>
+            </div>
 
-          <label>
-            說明
-            <input id="fDescription" type="text" placeholder="例如：早餐、房租、薪資" required />
-          </label>
-        </div>
+            <!-- 圖表區塊 -->
+            <div class="chart-container">
+                <canvas id="expense-chart"></canvas>
+            </div>
 
-        <div class="row gap">
-          <button id="btnSubmit" class="btn primary" type="submit" disabled>新增</button>
-          <button id="btnReload" class="btn" type="button" disabled>重新讀取本月資料</button>
-        </div>
+            <!-- 表格區塊 -->
+            <div class="table-responsive">
+                <table id="records-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>類型</th>
+                            <th>分類</th>
+                            <th>金額</th>
+                            <th>描述</th>
+                            <th>備註</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records-tbody">
+                        <!-- 動態生成 -->
+                    </tbody>
+                </table>
+                <div id="loading-spinner" style="display:none; text-align:center; padding: 20px;">資料讀取中...</div>
+            </div>
+        </section>
+    </main>
 
-        <p id="status" class="status muted"></p>
-      </form>
-    </section>
+    <footer>
+        <p>&copy; 2026 溫暖日系記帳本</p>
+    </footer>
 
-    <section class="card">
-      <div class="row space-between center">
-        <h2>每月概覽</h2>
-        <div class="row gap center">
-          <label class="row gap center">
-            月份
-            <input id="monthPicker" type="month" disabled />
-          </label>
-        </div>
-      </div>
-
-      <div class="stats">
-        <div class="stat">
-          <div class="muted">收入</div>
-          <div id="sumIncome" class="big">0</div>
-        </div>
-        <div class="stat">
-          <div class="muted">支出</div>
-          <div id="sumExpense" class="big">0</div>
-        </div>
-        <div class="stat">
-          <div class="muted">結餘</div>
-          <div id="sumNet" class="big">0</div>
-        </div>
-      </div>
-
-      <h3>支出分類統計</h3>
-      <div id="categoryBreakdown" class="breakdown"></div>
-    </section>
-
-    <section class="card full">
-      <div class="row space-between center">
-        <h2>本月明細</h2>
-        <div class="row gap">
-          <button id="btnRefresh" class="btn" disabled>刷新</button>
-        </div>
-      </div>
-
-      <div class="tableWrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>類型</th>
-              <th>分類</th>
-              <th class="right">金額</th>
-              <th>說明</th>
-              <th>付款方式</th>
-            </tr>
-          </thead>
-          <tbody id="recordsTbody"></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <footer class="container footer muted">
-    <small>Tips：欄位表若未填 Type，會被視為「支出/收入共用選項」。</small>
-  </footer>
-
-  <!-- 放最後，確保 DOM 先就緒 -->
-  <script src="./app.js"></script>
+    <!-- Google Scripts -->
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Main Logic -->
+    <script src="app.js"></script>
 </body>
 </html>
